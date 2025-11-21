@@ -541,13 +541,9 @@ extern BOOLEAN MmMakeLowMemory;
 extern BOOLEAN MmEnforceWriteProtection;
 extern SIZE_T MmAllocationFragment;
 extern ULONG MmConsumedPoolPercentage;
-extern ULONG MmVerifyDriverBufferType;
-extern ULONG MmVerifyDriverLevel;
-extern WCHAR MmVerifyDriverBuffer[512];
 extern WCHAR MmLargePageDriverBuffer[512];
 extern LIST_ENTRY MiLargePageDriverList;
 extern BOOLEAN MiLargePageAllDrivers;
-extern ULONG MmVerifyDriverBufferLength;
 extern ULONG MmLargePageDriverBufferLength;
 extern SIZE_T MmSizeOfNonPagedPoolInBytes;
 extern SIZE_T MmMaximumNonPagedPoolInBytes;
@@ -2133,12 +2129,6 @@ ULONG
 NTAPI
 MiGetPageProtection(
     IN PMMPTE PointerPte
-);
-
-PLDR_DATA_TABLE_ENTRY
-NTAPI
-MiLookupDataTableEntry(
-    IN PVOID Address
 );
 
 CODE_SEG("INIT")

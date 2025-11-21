@@ -3523,41 +3523,6 @@ Quickie:
     return Status;
 }
 
-PLDR_DATA_TABLE_ENTRY
-NTAPI
-MiLookupDataTableEntry(IN PVOID Address)
-{
-    PLDR_DATA_TABLE_ENTRY LdrEntry, FoundEntry = NULL;
-    PLIST_ENTRY NextEntry;
-    PAGED_CODE();
-
-    /* Loop entries */
-    NextEntry = PsLoadedModuleList.Flink;
-    do
-    {
-        /* Get the loader entry */
-        LdrEntry =  CONTAINING_RECORD(NextEntry,
-                                      LDR_DATA_TABLE_ENTRY,
-                                      InLoadOrderLinks);
-
-        /* Check if the address matches */
-        if ((Address >= LdrEntry->DllBase) &&
-            (Address < (PVOID)((ULONG_PTR)LdrEntry->DllBase +
-                               LdrEntry->SizeOfImage)))
-        {
-            /* Found a match */
-            FoundEntry = LdrEntry;
-            break;
-        }
-
-        /* Move on */
-        NextEntry = NextEntry->Flink;
-    } while(NextEntry != &PsLoadedModuleList);
-
-    /* Return the entry */
-    return FoundEntry;
-}
-
 /* PUBLIC FUNCTIONS ***********************************************************/
 
 /*

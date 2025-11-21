@@ -76,6 +76,7 @@
 #include "hal.h"
 #include "hdl.h"
 #include "icif.h"
+#include "vf.h"
 #include "arch/intrin_i.h"
 #include <arbiter.h>
 

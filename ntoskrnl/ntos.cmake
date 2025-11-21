@@ -244,6 +244,7 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/region.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/rmap.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/section.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/iosup.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/shutdown.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ob/devicemap.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ob/obdir.c
@@ -292,11 +293,12 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/tokenadj.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/tokencls.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/tokenlif.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/driver.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/guidobj.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/smbios.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmi.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmidrv.c)
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmidrv.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/init.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/driver.c)
 
 if(DBG)
     list(APPEND SOURCE ${REACTOS_SOURCE_DIR}/ntoskrnl/se/debug.c)

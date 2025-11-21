@@ -1813,6 +1813,13 @@ VOID
 NTAPI
 MiInitializeWorkingSetList(_Inout_ PMMSUPPORT WorkingSet);
 
+/* iosup.c ****************************************************************/
+
+PLDR_DATA_TABLE_ENTRY
+NTAPI
+MiLookupDataTableEntry(IN PVOID Address);
+
+
 #ifdef __cplusplus
 } // extern "C"
 

@@ -2032,19 +2032,55 @@ SSI_DEF(SystemPrioritySeperation)
 }
 
 /* Class 40 */
-QSI_DEF(SystemVerifierAddDriverInformation)
+SSI_DEF(SystemVerifierAddDriverInformation)
 {
-    /* FIXME */
-    DPRINT1("NtQuerySystemInformation - SystemVerifierAddDriverInformation not implemented\n");
-    return STATUS_NOT_IMPLEMENTED;
+    KPROCESSOR_MODE PreviousMode;
+    NTSTATUS Status;
+    UNICODE_STRING DriverName;
+
+    PreviousMode = ExGetPreviousMode();
+    if (PreviousMode != KernelMode && !SeSinglePrivilegeCheck(SeDebugPrivilege, PreviousMode))
+    {
+        return STATUS_PRIVILEGE_NOT_HELD;
+    }
+
+    Status = ProbeAndCaptureUnicodeString(&DriverName, PreviousMode, (PUNICODE_STRING)Buffer);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    Status = VfAddDriverEntry(&DriverName);
+
+    ReleaseCapturedUnicodeString(&DriverName, PreviousMode);
+
+    return Status;
 }
 
 /* Class 41 */
-QSI_DEF(SystemVerifierRemoveDriverInformation)
+SSI_DEF(SystemVerifierRemoveDriverInformation)
 {
-    /* FIXME */
-    DPRINT1("NtQuerySystemInformation - SystemVerifierRemoveDriverInformation not implemented\n");
-    return STATUS_NOT_IMPLEMENTED;
+    KPROCESSOR_MODE PreviousMode;
+    NTSTATUS Status;
+    UNICODE_STRING DriverName;
+
+    PreviousMode = ExGetPreviousMode();
+    if (PreviousMode != KernelMode && !SeSinglePrivilegeCheck(SeDebugPrivilege, PreviousMode))
+    {
+        return STATUS_PRIVILEGE_NOT_HELD;
+    }
+
+    Status = ProbeAndCaptureUnicodeString(&DriverName, PreviousMode, (PUNICODE_STRING)Buffer);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    Status = VfRemoveDriverEntry(&DriverName);
+
+    ReleaseCapturedUnicodeString(&DriverName, PreviousMode);
+
+    return Status;
 }
 
 /* Class 42 - Power Information */
@@ -2332,24 +2368,37 @@ QSI_DEF(SystemRangeStartInformation)
 /* Class 51 - Driver verifier information */
 QSI_DEF(SystemVerifierInformation)
 {
-    /* FIXME */
-    DPRINT1("NtQuerySystemInformation - SystemVerifierInformation not implemented\n");
-    return STATUS_NOT_IMPLEMENTED;
+    if (Size < sizeof(SYSTEM_VERIFIER_INFORMATION))
+    {
+        *ReqSize = sizeof(SYSTEM_VERIFIER_INFORMATION);
+        return STATUS_INFO_LENGTH_MISMATCH;
+    }
+
+    return VfGetSystemInformation((PSYSTEM_VERIFIER_INFORMATION)Buffer, Size, ReqSize);
 }
 
 SSI_DEF(SystemVerifierInformation)
 {
-    /* FIXME */
-    DPRINT1("NtSetSystemInformation - SystemVerifierInformation not implemented\n");
-    return STATUS_NOT_IMPLEMENTED;
+    // VfSetSystemInformation does different things depending on the Size, so don't check
+    // that here.
+
+    if (ExGetPreviousMode() != KernelMode)
+    {
+        return STATUS_PRIVILEGE_NOT_HELD;
+    }
+
+    return VfSetSystemInformation((PSYSTEM_VERIFIER_INFORMATION)Buffer, Size);
 }
 
 /* Class 52 */
 SSI_DEF(SystemVerifierThunkExtend)
 {
-    /* FIXME */
-    DPRINT1("NtSetSystemInformation - SystemVerifierThunkExtend not implemented\n");
-    return STATUS_NOT_IMPLEMENTED;
+    if (ExGetPreviousMode() != KernelMode)
+    {
+        return STATUS_PRIVILEGE_NOT_HELD;
+    }
+
+    return MmAddVerifierThunks((PDRIVER_VERIFIER_THUNK_PAIRS)Buffer, Size);
 }
 
 /* Class 53 - A session's processes */
@@ -2886,8 +2935,8 @@ CallQS[] =
     SI_QS(SystemRegistryQuotaInformation),
     SI_XS(SystemExtendServiceTableInformation),
     SI_XS(SystemPrioritySeperation),
-    SI_QX(SystemVerifierAddDriverInformation), /* it should be SI_XX */
-    SI_QX(SystemVerifierRemoveDriverInformation), /* it should be SI_XX */
+    SI_XS(SystemVerifierAddDriverInformation),
+    SI_XS(SystemVerifierRemoveDriverInformation),
     SI_QX(SystemProcessorIdleInformation), /* it should be SI_XX */
     SI_QX(SystemLegacyDriverInformation), /* it should be SI_XX */
     SI_QS(SystemCurrentTimeZoneInformation), /* it should be SI_QX */

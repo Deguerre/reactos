@@ -1689,6 +1689,9 @@ Phase1InitializationDiscard(IN PVOID Context)
     /* Set up Region Maps, Sections and the Paging File */
     if (!MmInitSystem(1, LoaderBlock)) KeBugCheck(MEMORY1_INITIALIZATION_FAILED);
 
+    /* Initialize the verifier */
+    VfInitialize(LoaderBlock);
+
     /* Create NLS section */
     ExpInitNls(LoaderBlock);
 

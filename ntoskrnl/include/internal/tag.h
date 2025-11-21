@@ -170,4 +170,8 @@
 #define TAG_LPC_ZONE            'ZcpL'
 #define TAG_LPC_CONNECT_MESSAGE 'CCPL'
 
+/* Driver Verifier Tags */
+#define TAG_VF_DRIVER_ENTRY     'rDfV'
+#define TAG_VF_THUNKS           'hTfV'
+
 /* EOF */
