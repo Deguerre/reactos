@@ -160,7 +160,7 @@ extern void NTAPI KeReleaseSpinLockFromDpcLevel(IN PKSPIN_LOCK SpinLock);
 // KT_AMD64 means that the function is amd64-only.
 // KT_LAST() marks the end of the list.
 //
-#define VF_KERNEL_THUNKS \
+#define KERNEL_THUNKS \
     KT_IX86(KeRaiseIrql, KE_RAISE_IRQL, void, , (IN KIRQL, OUT PKIRQL)) \
     KT_IX86(KfRaiseIrql, KF_RAISE_IRQL, void, FASTCALL, (IN KIRQL)) \
     KT_ALL(KeRaiseIrqlToDpcLevel, KE_RAISE_IRQL_TO_DPC_LEVEL, KIRQL, , ()) \
@@ -181,8 +181,7 @@ extern void NTAPI KeReleaseSpinLockFromDpcLevel(IN PKSPIN_LOCK SpinLock);
 //
 // Enumeration for the thunked functions
 //
-#define KT_ALL(n,t,rt,cc,args) \
-    VFE_##t,
+#define KT_ALL(n,t,rt,cc,args) Vfe##n,
 
 #ifdef _M_AMD64
 #define KT_AMD64(n,t,rt,cc,args) KT_ALL(n,t,rt,cc,args)
@@ -196,12 +195,11 @@ extern void NTAPI KeReleaseSpinLockFromDpcLevel(IN PKSPIN_LOCK SpinLock);
 #define KT_IX86(n,t,rt,cc,args)
 #endif
 
-#define KT_LAST() \
-    VFE_COUNT
+#define KT_LAST() VfeCount
 
-typedef enum _VF_KERNEL_THUNK_NUM {
-VF_KERNEL_THUNKS
-} VF_KERNEL_THUNK_NUM;
+typedef enum _VFP_KERNEL_THUNK_NUM {
+KERNEL_THUNKS
+} VFP_KERNEL_THUNK_NUM;
 
 #undef KT_ALL
 #undef KT_IX86
@@ -211,8 +209,7 @@ VF_KERNEL_THUNKS
 //
 // Declare typedefs for the thunked functions
 //
-#define KT_ALL(n,t,rt,cc,args) \
-    typedef rt (cc *P##t) args;
+#define KT_ALL(n,t,rt,cc,args) typedef rt (cc *P##t) args;
 
 #ifdef _M_AMD64
 #define KT_AMD64(n,t,rt,cc,args) KT_ALL(n,t,rt,cc,args)
@@ -228,7 +225,7 @@ VF_KERNEL_THUNKS
 
 #define KT_LAST()
 
-VF_KERNEL_THUNKS
+KERNEL_THUNKS
 
 #undef KT_ALL
 #undef KT_IX86
@@ -238,8 +235,7 @@ VF_KERNEL_THUNKS
 //
 // Forward declare the thunks
 //
-#define KT_ALL(n,t,rt,cc,args) \
-    rt cc Vrfy##n args;
+#define KT_ALL(n,t,rt,cc,args) rt cc Vrfy##n args;
 
 #ifdef _M_AMD64
 #define KT_AMD64(n,t,rt,cc,args) KT_ALL(n,t,rt,cc,args)
@@ -255,7 +251,7 @@ VF_KERNEL_THUNKS
 
 #define KT_LAST()
 
-VF_KERNEL_THUNKS
+KERNEL_THUNKS
 
 #undef KT_ALL
 #undef KT_IX86
@@ -266,8 +262,7 @@ VF_KERNEL_THUNKS
 //
 // Declare the kernel thunk list
 //
-#define KT_ALL(n,t,rt,cc,args) \
-    { #n, NULL, (PVOID)Vrfy##n },
+#define KT_ALL(n,t,rt,cc,args) { #n, NULL, (PVOID)Vrfy##n },
 
 #ifdef _M_AMD64
 #define KT_AMD64(n,t,rt,cc,args) KT_ALL(n,t,rt,cc,args)
@@ -281,11 +276,10 @@ VF_KERNEL_THUNKS
 #define KT_IX86(n,t,rt,cc,args)
 #endif
 
-#define KT_LAST() \
-    { NULL, NULL, NULL }
+#define KT_LAST() { NULL, NULL, NULL }
 
 VERIFIER_THUNK VfKernelThunks[] = {
-    VF_KERNEL_THUNKS
+    KERNEL_THUNKS
 };
 
 #undef KT_ALL
@@ -293,11 +287,11 @@ VERIFIER_THUNK VfKernelThunks[] = {
 #undef KT_AMD64
 #undef KT_LAST
 
-#undef VF_KERNEL_THUNKS
+#undef KERNEL_THUNKS
 
 
 #ifdef _M_IX86
-PVOID VfiOriginalHalRoutines[VFE_COUNT];
+PVOID VfiOriginalHalRoutines[VfeCount];
 #endif
 
 
@@ -307,7 +301,7 @@ VrfyKeInitializeSpinLock(
 )
 {
     KeInitializeSpinLock(SpinLock);
-    VfiInitializeDeadlockableResource();
+    VffInitializeDeadlockableResource();
 }
 
 
@@ -335,22 +329,11 @@ VrfyKeAcquireSpinLock(
     }
 
     PKE_ACQUIRE_SPIN_LOCK OrigKeAcquireSpinLock;
-    OrigKeAcquireSpinLock = (PKE_ACQUIRE_SPIN_LOCK)VfiOriginalHalRoutines[VFE_KE_ACQUIRE_SPIN_LOCK];
+    OrigKeAcquireSpinLock = (PKE_ACQUIRE_SPIN_LOCK)VfiOriginalHalRoutines[VfeKeAcquireSpinLock];
+    NT_ASSERT(OrigKeAcquireSpinLock);
 
-    if (OrigKeAcquireSpinLock)
-    {
-        (*OrigKeAcquireSpinLock)(SpinLock, OldIrql);
-        VfiAcquireDeadlockableResource();
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KE_ACQUIRE_SPIN_LOCK,
-                     0,
-                     0);
-    }
+    (*OrigKeAcquireSpinLock)(SpinLock, OldIrql);
+    VffAcquireDeadlockableResource();
 }
 #endif
 
@@ -379,25 +362,13 @@ VrfyKeReleaseSpinLock(
 
 #ifdef _M_IX86
     PKE_RELEASE_SPIN_LOCK OrigKeReleaseSpinLock;
-    OrigKeReleaseSpinLock = (PKE_RELEASE_SPIN_LOCK)VfiOriginalHalRoutines[VFE_KE_RELEASE_SPIN_LOCK];
+    OrigKeReleaseSpinLock = (PKE_RELEASE_SPIN_LOCK)VfiOriginalHalRoutines[VfeKeReleaseSpinLock];
+    NT_ASSERT(OrigKeReleaseSpinLock);
 
-    if (OrigKeReleaseSpinLock)
-    {
-        VfiReleaseDeadlockableResource();
-        (*OrigKeReleaseSpinLock)(SpinLock, NewIrql);
-        return;
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KE_RELEASE_SPIN_LOCK,
-                     0,
-                     0);
-    }
+    VffReleaseDeadlockableResource();
+    (*OrigKeReleaseSpinLock)(SpinLock, NewIrql);
 #else
-    VfiReleaseDeadlockableResource();
+    VffReleaseDeadlockableResource();
     KeReleaseSpinLock(SpinLock, NewIrql);
 #endif
 }
@@ -429,23 +400,12 @@ VrfyKfAcquireSpinLock(
     }
 
     PKF_ACQUIRE_SPIN_LOCK OrigKfAcquireSpinLock;
-    OrigKfAcquireSpinLock = (PKF_ACQUIRE_SPIN_LOCK)VfiOriginalHalRoutines[VFE_KF_ACQUIRE_SPIN_LOCK];
+    OrigKfAcquireSpinLock = (PKF_ACQUIRE_SPIN_LOCK)VfiOriginalHalRoutines[VfeKfAcquireSpinLock];
+    NT_ASSERT(OrigKfAcquireSpinLock);
 
-    if (OrigKfAcquireSpinLock)
-    {
-        PrevIrql = (*OrigKfAcquireSpinLock)(SpinLock);
-        VfiAcquireDeadlockableResource();
-        return PrevIrql;
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KF_ACQUIRE_SPIN_LOCK,
-                     0,
-                     0);
-    }
+    PrevIrql = (*OrigKfAcquireSpinLock)(SpinLock);
+    VffAcquireDeadlockableResource();
+    return PrevIrql;
 }
 
 
@@ -473,23 +433,11 @@ VrfyKfReleaseSpinLock(
     VfCheckLowerIrql(NewIrql);
 
     PKF_RELEASE_SPIN_LOCK OrigKfReleaseSpinLock;
-    OrigKfReleaseSpinLock = (PKF_RELEASE_SPIN_LOCK)VfiOriginalHalRoutines[VFE_KF_RELEASE_SPIN_LOCK];
+    OrigKfReleaseSpinLock = (PKF_RELEASE_SPIN_LOCK)VfiOriginalHalRoutines[VfeKfReleaseSpinLock];
+    NT_ASSERT(OrigKfReleaseSpinLock);
 
-    if (OrigKfReleaseSpinLock)
-    {
-        VfiReleaseDeadlockableResource();
-        (*OrigKfReleaseSpinLock)(SpinLock, NewIrql);
-        return;
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KF_RELEASE_SPIN_LOCK,
-                     0,
-                     0);
-    }
+    VffReleaseDeadlockableResource();
+    (*OrigKfReleaseSpinLock)(SpinLock, NewIrql);
 }
 #endif
 
@@ -516,20 +464,10 @@ VrfyKeRaiseIrqlToDpcLevel()
 
 #if defined (_X86_)
     PKE_RAISE_IRQL_TO_DPC_LEVEL OrigKeRaiseIrqlToDpcLevel;
-    OrigKeRaiseIrqlToDpcLevel = (PKE_RAISE_IRQL_TO_DPC_LEVEL)VfiOriginalHalRoutines[VFE_KE_RAISE_IRQL_TO_DPC_LEVEL];
-    if (OrigKeRaiseIrqlToDpcLevel)
-    {
-        return (*OrigKeRaiseIrqlToDpcLevel)();
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KE_RAISE_IRQL_TO_DPC_LEVEL,
-                     0,
-                     0);
-    }
+    OrigKeRaiseIrqlToDpcLevel = (PKE_RAISE_IRQL_TO_DPC_LEVEL)VfiOriginalHalRoutines[VfeKeRaiseIrqlToDpcLevel];
+    NT_ASSERT(OrigKeRaiseIrqlToDpcLevel);
+
+    return (*OrigKeRaiseIrqlToDpcLevel)();
 #endif
 
     return KeRaiseIrqlToDpcLevel();
@@ -547,21 +485,10 @@ VrfyKfRaiseIrql(IN KIRQL NewIrql)
 
     InterlockedIncrementUL(&VfpGlobalData.RaiseIrqls);
 
-    OrigKfRaiseIrql = (PKF_RAISE_IRQL)VfiOriginalHalRoutines[VFE_KF_RAISE_IRQL];
-    if (OrigKfRaiseIrql)
-    {
-        (*OrigKfRaiseIrql)(NewIrql);
-        return;
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KF_RAISE_IRQL,
-                     0,
-                     0);
-    }
+    OrigKfRaiseIrql = (PKF_RAISE_IRQL)VfiOriginalHalRoutines[VfeKfRaiseIrql];
+    NT_ASSERT(OrigKfRaiseIrql);
+
+    (*OrigKfRaiseIrql)(NewIrql);
 }
 #endif
 
@@ -575,21 +502,10 @@ VrfyKfLowerIrql(IN KIRQL NewIrql)
 
     VfCheckLowerIrql(NewIrql);
 
-    OrigKfLowerIrql = (PKF_LOWER_IRQL)VfiOriginalHalRoutines[VFE_KF_LOWER_IRQL];
-    if (OrigKfLowerIrql)
-    {
-        (*OrigKfLowerIrql)(NewIrql);
-        return;
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KF_LOWER_IRQL,
-                     0,
-                     0);
-    }
+    OrigKfLowerIrql = (PKF_LOWER_IRQL)VfiOriginalHalRoutines[VfeKfLowerIrql];
+    NT_ASSERT(OrigKfLowerIrql);
+
+    (*OrigKfLowerIrql)(NewIrql);
 }
 #endif
 
@@ -615,21 +531,10 @@ VrfyKeRaiseIrql(IN KIRQL NewIrql, OUT PKIRQL OldIrql)
     }
 
     PKE_RAISE_IRQL OrigKeRaiseIrql;
+    OrigKeRaiseIrql = (PKE_RAISE_IRQL)VfiOriginalHalRoutines[VfeKeRaiseIrql];
+    NT_ASSERT(OrigKeRaiseIrql);
 
-    OrigKeRaiseIrql = (PKE_RAISE_IRQL)VfiOriginalHalRoutines[VFE_KE_RAISE_IRQL];
-    if (OrigKeRaiseIrql)
-    {
-        (*OrigKeRaiseIrql)(NewIrql, OldIrql);
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KE_RAISE_IRQL,
-                     0,
-                     0);
-    }
+    (*OrigKeRaiseIrql)(NewIrql, OldIrql);
 }
 #endif
 
@@ -642,20 +547,10 @@ VrfyKeLowerIrql(IN KIRQL NewIrql)
 #if defined (_X86_)
     PKE_LOWER_IRQL OrigKeLowerIrql;
 
-    OrigKeLowerIrql = (PKE_LOWER_IRQL)VfiOriginalHalRoutines[VFE_KE_LOWER_IRQL];
-    if (OrigKeLowerIrql)
-    {
-        (*OrigKeLowerIrql)(NewIrql);
-    }
-    else
-    {
-        // FIXME Check this
-        KeBugCheckEx(DRIVER_VERIFIER_DETECTED_VIOLATION,
-                     0,
-                     VFE_KE_LOWER_IRQL,
-                     0,
-                     0);
-    }
+    OrigKeLowerIrql = (PKE_LOWER_IRQL)VfiOriginalHalRoutines[VfeKeLowerIrql];
+    NT_ASSERT(OrigKeLowerIrql);
+
+    (*OrigKeLowerIrql)(NewIrql);
 #else
     KeLowerIrql(NewIrql);
 #endif
@@ -683,7 +578,7 @@ VrfyKeAcquireSpinLockAtDpcLevel(IN PKSPIN_LOCK SpinLock)
 
     KeAcquireSpinLockAtDpcLevel(SpinLock);
 
-    VfiAcquireDeadlockableResource();
+    VffAcquireDeadlockableResource();
 }
 
 
@@ -703,7 +598,7 @@ VrfyKeReleaseSpinLockFromDpcLevel(IN PKSPIN_LOCK SpinLock)
                       0);
     }
 
-    VfiReleaseDeadlockableResource();
+    VffReleaseDeadlockableResource();
 
     KeReleaseSpinLockFromDpcLevel(SpinLock);
 }
@@ -722,7 +617,7 @@ VrfyKeAcquireSpinLockRaiseToDpc(IN PKSPIN_LOCK SpinLock)
 
     NewIrql = KeAcquireSpinLockRaiseToDpc(SpinLock);
 
-    VfiAcquireDeadlockableResource();
+    VffAcquireDeadlockableResource();
 
     return NewIrql;
 }
@@ -740,7 +635,7 @@ VrfyKeAcquireSpinLockRaiseToSynch(IN PKSPIN_LOCK SpinLock)
 
     NewIrql = KeAcquireSpinLockRaiseToDpc(SpinLock);
 
-    VfiAcquireDeadlockableResource();
+    VffAcquireDeadlockableResource();
 
     return NewIrql;
 }

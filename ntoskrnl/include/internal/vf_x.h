@@ -16,3 +16,16 @@ VfIsVerifierOn()
 }
 
 
+// This hash function is designed for very small hash tables, such
+// as are found in the verifier (around 32-64 buckets).
+FORCEINLINE
+ULONG
+VfpHashFunction(ULONG Seed, ULONG Value)
+{
+    ULONG ValueHi = Value >> 16;
+    ULONG ValueLo = Value & 0xFFFF;
+    ULONG Hash = (0xd991 * ValueHi + 0x6745 * ValueLo + 0xd4e1 * Seed) >> 16;
+    return Hash;
+}
+
+

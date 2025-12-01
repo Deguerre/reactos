@@ -12,20 +12,19 @@ extern "C" {
 #endif
 
 void
-FASTCALL
-VfiInitializeDeadlockDetection();
+VfpInitializeDeadlockDetection();
 
 void
 FASTCALL
-VfiInitializeDeadlockableResource();
+VffInitializeDeadlockableResource();
 
 void
 FASTCALL
-VfiAcquireDeadlockableResource();
+VffAcquireDeadlockableResource();
 
 void
 FASTCALL
-VfiReleaseDeadlockableResource();
+VffReleaseDeadlockableResource();
 
 #ifdef __cplusplus
 }
