@@ -298,6 +298,8 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmi.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmidrv.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/init.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/kernel.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/deadlock.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/driver.c)
 
 if(DBG)

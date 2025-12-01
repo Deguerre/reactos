@@ -42,8 +42,8 @@ ULONG MmVerifyDriverLevel = -1;
 PVOID MmTriageActionTaken;
 LOGICAL MmDontVerifyRandomDrivers = TRUE;
 LOGICAL MiVerifyAllDrivers = FALSE;
-LOGICAL KfVerifyKernel = FALSE;
-LOGICAL KfVerifyHal = FALSE;
+LOGICAL VfVerifyKernel = FALSE;
+LOGICAL VfVerifyHal = FALSE;
 PVOID KernelVerifier = NULL;
 
 #ifdef _MSC_VER
@@ -275,6 +275,7 @@ VfInsertRequestedDriverList(PVERIFIER_DRIVER_ENTRY Entry)
 }
 
 
+
 CODE_SEG("VERIFY")
 VOID
 VfInitializeDriverEntry(
@@ -394,12 +395,12 @@ VfInitialize(
 
                 if (RtlEqualUnicodeString(&DllEntry->DriverName, &KernelName, TRUE))
                 {
-                    KfVerifyKernel = TRUE;
+                    VfVerifyKernel = TRUE;
                     KernelEntry = DllEntry;
                 }
                 else if (RtlEqualUnicodeString(&DllEntry->DriverName, &HalName, TRUE))
                 {
-                    KfVerifyHal = TRUE;
+                    VfVerifyHal = TRUE;
                     HalEntry = DllEntry;
                 }
 
@@ -411,6 +412,8 @@ VfInitialize(
             }
         }
     }
+
+    VfInitializeKernel();
 }
 
 

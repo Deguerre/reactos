@@ -74,12 +74,12 @@ typedef struct _VERIFIER_DRIVER_ENTRY
 //
 // The type for an override
 //
-typedef struct _VERIFIER_HOOK
+typedef struct _VERIFIER_THUNK
 {
     PCHAR OriginalRoutineName;
     PVOID OriginalRoutine;
     PVOID NewRoutine;
-} VERIFIER_HOOK, *PVERIFIER_HOOK;
+} VERIFIER_THUNK, *PVERIFIER_THUNK;
 
 
 //
@@ -182,13 +182,15 @@ extern LIST_ENTRY VfThunkedDriverList;
 extern ULONG MiActiveVerifierThunks;
 extern LOGICAL MmDontVerifyRandomDrivers;
 extern LOGICAL MiVerifyAllDrivers;
+extern LOGICAL VfVerifyKernel;
+extern LOGICAL VfVerifyHal;
 
 
 //
 // Initialization function
 //
 CODE_SEG("INIT")
-VOID
+void
 VfInitialize(
     IN PLOADER_PARAMETER_BLOCK LoaderBlock
 );
@@ -255,6 +257,16 @@ MmIsVerifierEnabled(OUT PULONG VerifierFlags);
 PLDR_DATA_TABLE_ENTRY
 NTAPI
 MiLookupDataTableEntry(IN PVOID Address);
+
+
+BOOLEAN
+NTAPI
+VfEnableVerifierForDriver(IN PLDR_DATA_TABLE_ENTRY DataTableEntry);
+
+
+
+void VfInitializeKernel();
+void VfInitializeHal();
 
 
 #ifdef __cplusplus
