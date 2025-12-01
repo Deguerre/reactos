@@ -134,6 +134,10 @@ VfpDeadlockHash(
     IN PVOID Address
 )
 {
+    // Word on the street is that it's more efficient to put all resources from
+    // the same page in the same hash chain. The theory is that most drivers
+    // keep them together, either in globals or in an allocated structure. This
+    // makes deleting them much quicker.
     ULONG Hash = VfpHashFunction(Seed, ((ULONG_PTR)Address >> PAGE_SHIFT));
     return Hash % VFP_DEADLOCK_HASH_TABLE_SIZE;
 }
